@@ -141,8 +141,8 @@ Statistics by Tilman M. Davies. If I can do it, you can too.
    below or using the Packages tab on the right, bottom panel.
 
 ```
-        > install.packages('data.table')
-        > install.pacvkages('dplyr')
+        install.packages('data.table')
+        install.packages('dplyr')
 ```
   
 5. Make sure the supporting R script functions are in the right
@@ -161,6 +161,8 @@ complicated programming, to learn from as I started. I hope it
 serves you well.
 
 Good luck!
+
+# References
 
 1. https://www.gjopen.com/questions/2113-what-will-be-the-producer-price-index-for-internet-advertising-sales-in-june-2022
 2. https://fred.stlouisfed.org/graph/?g=ph5G
