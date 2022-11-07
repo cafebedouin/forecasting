@@ -1,115 +1,52 @@
 # fred.R 
 #################################################
-# Description: Pulls data from the FRED website on 
-# currencies, precious metals, unemployment, etc.
-# allows you to limit the data set, set the 
-# frequency interval, then provides 
-# a probability base line against <=5 bins or 
-# 4 price points using current price and walk 
-# through the outcomes in set.
+# Description: Pulls data from the FRED website, 
+# caches it, formats data and generates a 
+# probability baseline against any arbitrary 
+# number of bins for historical and monte carlo 
+# simulated data.
 # 
-# Use: Best called as a function from another script
-# where defaults for multiple questions can be stored 
-# and run at will, e.g., update.R, in this repo.
+# Example usage:
 #
-# Example FRED data 
-#################################################
-# Exchange Rate codes
-# U.S. / Australia Foreign Exchange Rate (DEXUSAL)
-# Brazil / U.S. Foreign Exchange Rate (DEXBZUS)
-# Canada / U.S. Foreign Exchange Rate (DEXCAUS)
-# China / U.S. Foreign Exchange Rate (DEXCHUS)
-# Denmark / U.S. Foreign Exchange Rate (DEXDNUS)
-# U.S. / Euro Foreign Exchange Rate (DEXUSEU)
-# Hong Kong / U.S. Foreign Exchange Rate (DEXHKUS)
-# India / U.S. Foreign Exchange Rate (DEXINUS)
-# Japan / U.S. Foreign Exchange Rate (DEXJPUS)
-# U.S. / New Zealand Foreign Exchange Rate (DEXUSNZ)
-# Malaysia / U.S. Foreign Exchange Rate (DEXMAUS)
-# Mexico / U.S. Foreign Exchange Rate (DEXMXUS) 
-# Norway / U.S. Foreign Exchange Rate (DEXNOUS)
-# Singapore / U.S. Foreign Exchange Rate (DEXSIUS)
-# South Africa / U.S. Foreign Exchange Rate (DEXSFUS)
-# South Korea / U.S. Foreign Exchange Rate (DEXKOUS)
-# Sri Lanka / U.S. Foreign Exchange Rate (DEXSLUS)
-# Sweden / U.S. Foreign Exchange Rate (DEXSDUS)
-# Switzerland / U.S. Foreign Exchange Rate (DEXSZUS)
-# Taiwan / U.S. Foreign Exchange Rate (DEXTAUS)
-# Thailand / U.S. Foreign Exchange Rate (DEXTHUS)
-# U.S. / U.K. Foreign Exchange Rate (DEXUSUK)
-# Venezuela / U.S. Foreign Exchange Rate (DEXVZUS)
-#
-# Precious Metal codes
-# Gold Price, 10:30 A.M., LBMA, U.S. Dollars (GOLDAMGBD228NLBM)
-# Gold Price, 3:00 P.M., LBMA, U.S. Dollars (GOLDPMGBD228NLBM)
-# Gold Price, 10:30 A.M., British Pounds (GOLDAMGBD229NLBM)
-# Gold Price, 3:00 P.M., LBMA, British Pounds (GOLDPMGBD229NLBM)
-# Gold Price, 10:30 A.M., LBMA, Euros (GOLDAMGBD230NLBM)
-# Gold Price, 3:00 P.M., LBMA, Euros (GOLDPMGBD230NLBM)
-# Silver Price, 12:00 noon, LBMA, U.S. Dollars (SLVPRUSD)
-# Silver is available in many currency denominations.
-#
-# Indices
-# NASDAQ, S&P, Dow
-# NASDAQ Composite Index (NASDAQCOM)
-# NASDAQ 100 Index (NASDAQ100)
-# S&P 500 (SP500)
-# Dow Jones Industrial Average (DJIA)
-# Dow Jones Transportation Average (DJTA)
-# Dow Jones Utility Average (DJUA)
-# Dow Jones Composite Average (DJCA)
-#
-# Misc
-# Crude Oil Prices: Brent - Europe (DCOILBRENTEU)
-# University of Michigan: Consumer Sentiment (UMCSENT)
-
+# source("fred.R")
+# fred(code="JTSJOL", 
+#      begin_date="2000-12-01", 
+#      closing_date="2023-07-01", 
+#      bins=c(6000, 7000, 8000, 9000, 10000, 11000, Inf), 
+#      prob_type="monte-full") 
 
 # Replace defaults in function to desired, or 
 # call the function from another script or console
 fred <- function(code, # FRED, e.g., SP500 is S&P 500 in FRED
-                 begin_date, # For analysis, not question
-                 closing_date, # for question
-                 todays_date,
-                 bins,
-                 # Type of analysis, simple historical, monte carlo, etc.
-                 prob_type,
-                 freq="daily", # daily, weekly, monthly, quarterly, yearly
-                 trading_days=5, # Only matters for daily freq
-                 annual_percent="no", # use function to convert 
-                 prob_results_title=paste0(code,
-                                           " probability table run on ",
-                                           todays_date),
-                 # If you want a graph, indicate and add info
-                 graph="no",
-                 title=paste0(code, " Title "),
-                 subtitle="",
-                 info_source="",
-                 file_name="",
-                 graph_width=1250,
-                 graph_height=450,
-                 df_summary="yes") {
-  
-  #################################################
-  # Preliminaries
-  
-  # Preventing scientific notation in graphs
-  options(scipen=999)
+                 begin_date, # for data set
+                 closing_date, # for forecast
+                 bins, # bins=c(6000, 7000, 8000, 9000, 10000, 11000, Inf), 
+                 prob_type) { # defined functions: historical, monte-full, etc.
   
   # Set todays_date
   todays_date <- Sys.Date()
-
+  
   # Set date for ten years ago, FRED often has a 10 year limit
   ten_years <- todays_date - 3652
   
   #################################################
-  # Load libraries. If library X is not installed
-  # you can install it with this command at the R prompt:
-  # install.packages('X')
+  # Add libraries, install with install.packages('X')
   library(data.table)
   library(dplyr)
   
   #################################################
-  # Import, organize and output csv data
+  # Import and cache data
+  cached_file = paste0("./data/", code, "-", todays_date, ".csv")
+  
+  if (file.exists(cached_file)) {
+    
+    # Read in previously run data
+    df <- read.csv(cached_file, skip=0, header=TRUE)
+    
+    # Drop the numbered column
+    df <- df[ -c(1) ]
+    
+  } else {
   
   # Create live url to access data
   nurl = paste0("https://fred.stlouisfed.org/graph/fredgraph.csv?",
@@ -129,34 +66,17 @@ fred <- function(code, # FRED, e.g., SP500 is S&P 500 in FRED
   # Live import
   df <- read.csv(nurl, skip=0, header=TRUE)
   
-  # Troubleshoot
-  ###############################################
-  # Writes csv file, so you can use next bit of code
-  # without constantly pulling from FRED when testing.
-  #
-  # write.csv(df, file=paste0("./data/FRED-", 
-  #                          code,
-  #                          "-",
-  #                          todays_date,
-  #                          ".csv")) 
-  #
-  # Downloaded data rather than live, name same as FRED code
-  # df <- read.csv(paste0("./data/FRED-", 
-  #                      code, 
-  #                      "-",
-  #                      todays_date,                       
-  #                      ".csv"), 
-  #                      skip=0, header=TRUE)
-  # 
-  # In case columns need to be changed.
-  # df <- df[ -c(1) ]
+  # Cache data
+  write.csv(df, file=paste0("./data/", code, "-", todays_date, ".csv")) 
+
+  }
 
   # Visually check columns, data types and data
   glimpse(df)
 
   #################################################
-  # Call the probability functions by type,
-  # check README or probfun.R for details.
+  # Call the probability functions by type
+  
   source("./functions/probfun.R")
   return(probfun(df, 
                  closing_date, 
