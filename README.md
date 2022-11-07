@@ -1,6 +1,6 @@
 # Description
 
-GJP is a repository of R scripts used in forecasting.
+Forecasting is a repository of R scripts useful for geopolitical forecasting.
 
 # Quick Introduction
 
