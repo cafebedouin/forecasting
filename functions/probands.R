@@ -30,7 +30,7 @@ probands <- function(df,
                                    closing_date)
   
   # Checking output of remaining_time
-  # View(remaining_time)
+  View(remaining_time)
   
   # If values are percentages, 
   # change to whole number for multiplication.
@@ -67,10 +67,10 @@ probands <- function(df,
   # against projected mean and then subtracting projected mean.
   # You could use historical standard deviation, but I think
   # it gives probability ranges that are too narrow.
-  # projected_sig <- sum(projected_mu * exp(sd(percentages))) - projected_mu  
+  projected_sig <- sum(projected_mu * exp(sd(percentages))) - projected_mu  
 
   # Historical, a more conservative choice than above
-  projected_sig <- exp(sd(percentages))
+  # projected_sig <- exp(sd(percentages))
   
   # Check projected-sig output
   View(projected_sig)
