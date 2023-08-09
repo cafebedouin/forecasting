@@ -1,4 +1,4 @@
-# monte.R 
+# remaining_time.R 
 #################################################
 # Description: Calculates remaining_time
 
@@ -13,10 +13,12 @@ remaining_time <- function(df,
   # Calculate
   data_interval <- sum(as.numeric(difftime(last_data_date, first_data_date)) 
                        / length(df$value))
+  
   # View(data_interval)
   
   remaining_time <- sum(as.numeric(difftime(closing_date, last_data_date))
                         / data_interval)
+
   # View(remaining_time)
   
   # Return an integer

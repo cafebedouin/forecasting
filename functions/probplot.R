@@ -22,6 +22,8 @@ probplot <- function(df) {
     geom_line(data = df, aes(x = date, y = value)) +
     bbc_style() +
     labs(title=paste0("Standard Plot of Data")) +
+    theme(text=element_text(family="mono"))
     scale_x_date()
-  print(probplot)
+    
+  probplot
 }
